@@ -1897,14 +1897,20 @@ out_ret:
 	return retval;
 }
 
+<<<<<<< HEAD
 extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,
 			void *envp, int *flags);
+=======
+>>>>>>> caeb2975f27b (fs: kernelsu: scope-minimized manual hooks v1.4)
 static int do_execveat_common(int fd, struct filename *filename,
 			      struct user_arg_ptr argv,
 			      struct user_arg_ptr envp,
 			      int flags)
 {
+<<<<<<< HEAD
 	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
+=======
+>>>>>>> caeb2975f27b (fs: kernelsu: scope-minimized manual hooks v1.4)
 	return __do_execve_file(fd, filename, argv, envp, flags, NULL);
 }
 
@@ -1998,11 +2004,26 @@ void set_dumpable(struct mm_struct *mm, int value)
 	} while (cmpxchg(&mm->flags, old, new) != old);
 }
 
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
+extern bool ksu_execveat_hook __read_mostly;
+extern __attribute__((hot, always_inline)) int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
+			       void *__never_use_argv, void *__never_use_envp,
+			       int *__never_use_flags);
+extern int ksu_handle_execve_ksud(const char __user *filename_user,
+			const char __user *const __user *__argv);
+#endif
+
 SYSCALL_DEFINE3(execve,
 		const char __user *, filename,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)
 {
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
+	if (unlikely(ksu_execveat_hook))
+		ksu_handle_execve_ksud(filename, argv);
+	else
+		ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
+#endif
 	return do_execve(getname(filename), argv, envp);
 }
 
@@ -2024,6 +2045,10 @@ COMPAT_SYSCALL_DEFINE3(execve, const char __user *, filename,
 	const compat_uptr_t __user *, argv,
 	const compat_uptr_t __user *, envp)
 {
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK) // 32-bit su and 32-on-64 support
+	if (!ksu_execveat_hook)
+		ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
+#endif
 	return compat_do_execve(getname(filename), argv, envp);
 }
 
