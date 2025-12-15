@@ -40,6 +40,7 @@ config KSU_LSM_SECURITY_HOOKS
 	  Disabling this is mostly only useful for kernel 4.1 and older.
 	  Make sure to implement manual hooks on security/security.c.
 
+<<<<<<< HEAD
 menu "KernelSU - SUSFS"
 config KSU_SUSFS
     bool "KernelSU addon - SUSFS"
@@ -184,4 +185,6 @@ config KSU_SUSFS_SUS_SU
 
 endmenu
 
+=======
+>>>>>>> cd28258dfadc (kernelsu: import kernelsu-next v1.0.9 (1de68a8ed2a0))
 endmenu
