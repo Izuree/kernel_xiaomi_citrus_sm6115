@@ -14,6 +14,10 @@
 #include "kgsl_pool.h"
 #include "kgsl_sharedmem.h"
 
+#ifdef CONFIG_E404_ATTRIBUTES
+#include <linux/e404_attributes.h>
+#endif
+
 #define KGSL_MAX_POOLS 4
 #define KGSL_MAX_POOL_ORDER 8
 #define KGSL_MAX_RESERVED_PAGES 4096

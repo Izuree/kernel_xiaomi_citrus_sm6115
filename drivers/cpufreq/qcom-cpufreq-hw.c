@@ -17,6 +17,10 @@
 #include <linux/sched.h>
 #include <linux/cpu_cooling.h>
 
+#ifdef CONFIG_E404_SIGNATURE
+#include <linux/e404_attributes.h>
+#endif
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/dcvsh.h>
 
