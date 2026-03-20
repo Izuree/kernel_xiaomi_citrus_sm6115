@@ -155,6 +155,20 @@ int fs_overflowgid = DEFAULT_FS_OVERFLOWGID;
 EXPORT_SYMBOL(fs_overflowuid);
 EXPORT_SYMBOL(fs_overflowgid);
 
+static const u8 fake_release_obf[] = {
+    '5'^0x55, '.'^0x55, '1'^0x55, '.'^0x55,
+    '4'^0x55, '0'^0x55, '4'^0x55, 'R'^0x55,
+    '\0'^0x55
+};
+
+static void decode_fake_release(char *out, size_t len)
+{
+    unsigned int i;
+    for (i = 0; i < sizeof(fake_release_obf) && i < len - 1; i++)
+        out[i] = fake_release_obf[i] ^ 0x55;
+    out[i] = '\0';
+}
+
 /*
  * Returns true if current's euid is same as p's uid or euid,
  * or has CAP_SYS_NICE to p's user_ns.
@@ -1271,32 +1285,34 @@ void mark_after_kernel_init(void)
 {
     kthread_run(mark_after_kernel_init_thread, NULL, "after_kernel_init");
 }
-
 SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 {
 	struct new_utsname tmp;
 
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
-	if (after_kernel_init) {
-		strlcpy(tmp.release, "5.15.404R-deutereum", sizeof(tmp.release));
-	} else if (cur_uid == 0) {
-		strlcpy(tmp.release, "5.1.404R", sizeof(tmp.release));
-	} else if (cur_uid >= 1000) {
-		strlcpy(tmp.release, "5.15.404R-deutereum", sizeof(tmp.release));
+
+	if (cur_uid == 0 &&
+		(!strncmp(current->comm, "bpfloader", 9) ||
+		 !strncmp(current->comm, "netbpfload", 10) ||
+		 !strncmp(current->comm, "netd", 4))) {
+		strlcpy(tmp.release, "5.4.0", sizeof(tmp.release));
+	} else if (!after_kernel_init && cur_uid == 0) {
+		char decoded[32];
+		decode_fake_release(decoded, sizeof(decoded));
+		strlcpy(tmp.release, decoded, sizeof(tmp.release));
 	}
+
 	up_read(&uts_sem);
+
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
 		return -EFAULT;
-
-	override_custom_release(name->release, sizeof(name->release));
 	if (override_release(name->release, sizeof(name->release)))
 		return -EFAULT;
 	if (override_architecture(name))
 		return -EFAULT;
 	return 0;
 }
-
 #ifdef __ARCH_WANT_SYS_OLD_UNAME
 /*
  * Old cruft
