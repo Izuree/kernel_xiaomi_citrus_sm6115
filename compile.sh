@@ -259,7 +259,7 @@ makebuild() {
     sed -i 's/CONFIG_MODULE_SIG=y/CONFIG_MODULE_SIG=n/g' out/.config
     sed -i 's/CONFIG_MODULE_SIG_ALL=y/# CONFIG_MODULE_SIG_ALL is not set/g' out/.config
     sed -i 's/CONFIG_MODULE_SIG_FORCE=y/# CONFIG_MODULE_SIG_FORCE is not set/g' out/.config
-    
+    echo 0 > out/.version
     echo "-- Compiling Kernel --"
     export CCACHE_DIR="$BASE_DIR/ccache/.ccache_$TC"
 
