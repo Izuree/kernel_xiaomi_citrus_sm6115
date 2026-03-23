@@ -1288,6 +1288,7 @@ void mark_after_kernel_init(void)
 SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 {
 	struct new_utsname tmp;
+	uid_t cur_uid = current_uid().val;
 
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
