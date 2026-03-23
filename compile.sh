@@ -32,9 +32,9 @@ case "$*" in
 esac
 
 case "$*" in
-    *aosp*)
-        export PATH="$BASE_DIR/toolchains/aosp-clang/bin:$PATH"
-        TC="AOSP-Clang"
+    *gf*)
+        export PATH="$BASE_DIR/toolchains/gf-clang/bin:$PATH"
+        TC="bengal-Gf-Clang"
         ;;
     *neutron*)
         export PATH="$BASE_DIR/toolchains/neutron-clang/bin:$PATH"
@@ -53,9 +53,9 @@ case "$*" in
         TC="GCC"
         ;;
     *)
-        if [[ -d "$BASE_DIR/toolchains/aosp-clang" ]]; then
-            export PATH="$BASE_DIR/toolchains/aosp-clang/bin:$PATH"
-            TC="AOSP-Clang"
+        if [[ -d "$BASE_DIR/toolchains/gf-clang" ]]; then
+            export PATH="$BASE_DIR/toolchains/gf-clang/bin:$PATH"
+            TC="bengal-Gf-Clang"
         elif [[ -d "$BASE_DIR/toolchains/neutron-clang" ]]; then
             export PATH="$BASE_DIR/toolchains/neutron-clang/bin:$PATH"
             TC="Neutron-Clang"
@@ -66,18 +66,7 @@ case "$*" in
         ;;
 esac
 
-# Device selection using arrays
     declare -A DEVICE_MAP=(
-        # Hapus atau nonaktifkan perangkat lama jika tidak relevan, 
-        # atau tambahkan yang baru
-        # ["munch"]="MUNCH:vendor/munch_defconfig"
-        # ["alioth"]="ALIOTH:vendor/alioth_defconfig"
-        # ["apollo"]="APOLLO:vendor/apollo_defconfig"
-        # ["pipa"]="PIPA:vendor/pipa_defconfig"
-        # ["lmi"]="LMI:vendor/lmi_defconfig"
-        # ["umi"]="UMI:vendor/umi_defconfig"
-        # ["cmi"]="CMI:vendor/cmi_defconfig"
-        # ["cas"]="CAS:vendor/cas_defconfig"
         ["bengal"]="BENGAL:vendor/bengal-perf_defconfig"
 
     )
