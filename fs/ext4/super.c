@@ -3950,10 +3950,10 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	if (sbi->s_es->s_mount_opts[0]) {
-		char *s_mount_opts = kstrndup(sbi->s_es->s_mount_opts,
-					      sizeof(sbi->s_es->s_mount_opts),
-					      GFP_KERNEL);
-		if (!s_mount_opts)
+		char s_mount_opts[64];
+
+		if (strscpy_pad(s_mount_opts, sbi->s_es->s_mount_opts,
+				sizeof(s_mount_opts)) < 0)
 			goto failed_mount;
 		if (!parse_options(s_mount_opts, sb, &journal_devnum,
 				   &journal_ioprio, 0)) {
@@ -3961,7 +3961,6 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 				 "failed to parse options in superblock: %s",
 				 s_mount_opts);
 		}
-		kfree(s_mount_opts);
 	}
 	sbi->s_def_mount_opt = sbi->s_mount_opt;
 	if (!parse_options((char *) data, sb, &journal_devnum,
@@ -6242,7 +6241,7 @@ static ssize_t ext4_quota_write(struct super_block *sb, int type,
 		bh = ext4_bread(handle, inode, blk,
 				EXT4_GET_BLOCKS_CREATE |
 				EXT4_GET_BLOCKS_METADATA_NOFAIL);
-	} while (IS_ERR(bh) && (PTR_ERR(bh) == -ENOSPC) &&
+	} while (PTR_ERR(bh) == -ENOSPC &&
 		 ext4_should_retry_alloc(inode->i_sb, &retries));
 	if (IS_ERR(bh))
 		return PTR_ERR(bh);

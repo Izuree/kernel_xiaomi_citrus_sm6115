@@ -599,6 +599,9 @@ struct netdev_queue {
 
 	/* Subordinate device that the queue has been assigned to */
 	struct net_device	*sb_dev;
+#ifdef CONFIG_XDP_SOCKETS
+	struct xdp_umem         *umem;
+#endif
 /*
  * write-mostly part
  */
@@ -736,6 +739,9 @@ struct netdev_rx_queue {
 	struct kobject			kobj;
 	struct net_device		*dev;
 	struct xdp_rxq_info		xdp_rxq;
+#ifdef CONFIG_XDP_SOCKETS
+	struct xdp_umem                 *umem;
+#endif
 
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
@@ -1185,6 +1191,10 @@ struct netdev_net_notifier {
  *		      struct net_device *dev,
  *		      const unsigned char *addr, u16 vid)
  *	Deletes the FDB entry from dev coresponding to addr.
+ * int (*ndo_fdb_del_bulk)(struct ndmsg *ndm, struct nlattr *tb[],
+ *			   struct net_device *dev,
+ *			   u16 vid,
+ *			   struct netlink_ext_ack *extack);
  * int (*ndo_fdb_dump)(struct sk_buff *skb, struct netlink_callback *cb,
  *		       struct net_device *dev, struct net_device *filter_dev,
  *		       int *idx)
@@ -1425,6 +1435,11 @@ struct net_device_ops {
 					       struct net_device *dev,
 					       const unsigned char *addr,
 					       u16 vid);
+	int			(*ndo_fdb_del_bulk)(struct ndmsg *ndm,
+						    struct nlattr *tb[],
+						    struct net_device *dev,
+						    u16 vid,
+						    struct netlink_ext_ack *extack);
 	int			(*ndo_fdb_dump)(struct sk_buff *skb,
 						struct netlink_callback *cb,
 						struct net_device *dev,
@@ -4584,7 +4599,8 @@ netdev_features_t netdev_increment_features(netdev_features_t all,
 static inline netdev_features_t netdev_add_tso_features(netdev_features_t features,
 							netdev_features_t mask)
 {
-	return netdev_increment_features(features, NETIF_F_ALL_TSO, mask);
+	return netdev_increment_features(features, NETIF_F_ALL_TSO |
+					 NETIF_F_ALL_FOR_ALL, mask);
 }
 
 int __netdev_update_features(struct net_device *dev);
@@ -4704,15 +4720,6 @@ static inline bool netif_is_l3_slave(const struct net_device *dev)
 	return dev->priv_flags & IFF_L3MDEV_SLAVE;
 }
 
-static inline int dev_sdif(const struct net_device *dev)
-{
-#ifdef CONFIG_NET_L3_MASTER_DEV
-	if (netif_is_l3_slave(dev))
-		return dev->ifindex;
-#endif
-	return 0;
-}
-
 static inline bool netif_is_bridge_master(const struct net_device *dev)
 {
 	return dev->priv_flags & IFF_EBRIDGE;
@@ -4731,6 +4738,11 @@ static inline bool netif_is_ovs_master(const struct net_device *dev)
 static inline bool netif_is_ovs_port(const struct net_device *dev)
 {
 	return dev->priv_flags & IFF_OVS_DATAPATH;
+}
+
+static inline bool netif_is_any_bridge_port(const struct net_device *dev)
+{
+	return netif_is_bridge_port(dev) || netif_is_ovs_port(dev);
 }
 
 static inline bool netif_is_team_master(const struct net_device *dev)
@@ -4989,5 +5001,7 @@ do {								\
  */
 #define PTYPE_HASH_SIZE	(16)
 #define PTYPE_HASH_MASK	(PTYPE_HASH_SIZE - 1)
+
+extern struct net_device *blackhole_netdev;
 
 #endif	/* _LINUX_NETDEVICE_H */
