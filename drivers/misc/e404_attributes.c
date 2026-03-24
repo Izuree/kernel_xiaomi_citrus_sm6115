@@ -252,12 +252,11 @@ static struct attribute *e404_attrs[] = {
     &batt_profile_attr.attr,
     &kgsl_skip_zeroing_attr.attr,
     &file_sync_attr.attr,
+    &bg_blocklist_attr.attr,
     &panel_width_attr.attr,
     &panel_height_attr.attr,
     &oem_panel_width_attr.attr,
     &oem_panel_height_attr.attr,
-    &oem_panel_width_pipa_attr.attr,
-    &oem_panel_height_pipa_attr.attr,
     &version_override_attr.attr,
     NULL,
 };
