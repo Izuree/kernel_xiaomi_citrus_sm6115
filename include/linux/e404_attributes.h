@@ -23,9 +23,12 @@ struct e404_attributes {
     int file_sync;
     int panel_width;
     int panel_height;
-    int oem_panel_width;
-    int oem_panel_height;
-    char bg_blocklist[E404_BLOCKLIST_STRLEN];
+    int panel_width_pipa;
+    int panel_height_pipa;
+    int panel_oem_width;
+    int panel_oem_height;
+    int panel_oem_width_pipa;
+    int panel_oem_height_pipa;
 };
 
 extern struct e404_attributes e404_data;
