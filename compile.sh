@@ -161,7 +161,7 @@ clearbuild() {
 zipbuild() {
     echo "-- Zipping Kernel --"
     cd "$AK3_DIR" || exit 1
-    ZIP_NAME="E404R-${TYPE}-${TARGET}-$(date "+%y%m%d")-NOSUSFS.zip"
+    ZIP_NAME="RE404-${TARGET}-$(date "+%y%m%d").zip"
     zip -r9 "$BASE_DIR/$ZIP_NAME" META-INF/ tools/ "${TARGET}"*-Image anykernel.sh
     cd "$KERNEL_DIR" || exit 1
 }
