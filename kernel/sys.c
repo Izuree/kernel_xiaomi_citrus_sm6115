@@ -1297,7 +1297,7 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 		(!strncmp(current->comm, "bpfloader", 9) ||
 		 !strncmp(current->comm, "netbpfload", 10) ||
 		 !strncmp(current->comm, "netd", 4))) {
-		strlcpy(tmp.release, "5.4.0", sizeof(tmp.release));
+		strlcpy(tmp.release, "6.12.0", sizeof(tmp.release));
 	} else if (!after_kernel_init && cur_uid == 0) {
 		char decoded[32];
 		decode_fake_release(decoded, sizeof(decoded));
