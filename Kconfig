@@ -30,3 +30,9 @@ source "lib/Kconfig"
 source "lib/Kconfig.debug"
 
 source "techpack/Kconfig"
+config DEUTEREUM_POST_GEN_HOOK
+	bool "POST-GEN script "
+	default n
+	help
+	  Runs scripts/POST-GEN.sh after GEN utsrelease.h and before
+	  the final vmlinux link step.
