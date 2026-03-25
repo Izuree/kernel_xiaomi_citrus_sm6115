@@ -84,18 +84,6 @@ done
 # Set kernel image paths
 K_IMG="$KERNEL_DIR/out/arch/arm64/boot/Image"
 
-# Telegram configuration - Load from external file
-TELEGRAM_CONFIG="$BASE_DIR/kernel_build"
-if [[ -f "$TELEGRAM_CONFIG" ]]; then
-    source "$TELEGRAM_CONFIG"
-    export TOKEN="$TELEGRAM_TOKEN"
-    export CHATID="$TELEGRAM_CHATID"
-else
-    echo "-- Warning: Telegram config file not found at $TELEGRAM_CONFIG --"
-    echo "-- Telegram notifications will be disabled --"
-    export TOKEN=""
-    export CHATID=""
-fi
 
 # Build environment
 export ARCH="arm64"
@@ -118,36 +106,9 @@ build_msg() {
 <code>$COMMIT</code>
 EOF
 )
-    send_msg "$MSG"
 }
 
-success_msg() {
-    local MSG=$(cat <<EOF
-<b>Build Success !</b>
-<code>Date : $(date +"%d %b %Y, %H:%M:%S")</code>
-<code>Time : $(($TIME_END / 60))m $(($TIME_END % 60))s</code>
-EOF
-)
-    send_msg "$MSG"
-}
 
-send_msg() {
-    curl -s -X POST \
-        "https://api.telegram.org/bot$TOKEN/sendMessage" \
-        -d chat_id="$CHATID" \
-        -d text="$1" \
-        -d "parse_mode=html" \
-        -d "disable_web_page_preview=true"
-}
-
-send_file() {
-    curl -s -X POST \
-        "https://api.telegram.org/bot$TOKEN/sendDocument" \
-        -F chat_id="$CHATID" \
-        -F document=@"$1" \
-        -F "parse_mode=html" \
-        -F "disable_web_page_preview=true"
-}
 
 clearbuild() {
     if [[ "$1" == "all" ]]; then
@@ -166,11 +127,6 @@ zipbuild() {
     cd "$KERNEL_DIR" || exit 1
 }
 
-uploadbuild() {
-    send_file "$BASE_DIR/compile.log"
-    send_file "$BASE_DIR/$ZIP_NAME"
-    send_msg "<b>Kernel Flashable Zip Uploaded</b>"
-}
 
 setupbuild() {
     if [[ $TC == *Clang* ]]; then
@@ -308,17 +264,14 @@ while true; do
             clearbuild
             makebuild 2>&1 | tee -a "$BASE_DIR/compile.log"
             zipbuild
-            uploadbuild
             TIME_END=$(("$(date +"%s")" - "$TIME_START"))
-            success_msg
+        
             ;;
         3)
-            echo "-- Sending to Telegram --"
-            send_file "$BASE_DIR/$ZIP_NAME"
+            echo "-- We dont support telegram upload! --"
             ;;
         4)
             zipbuild
-            send_file "$BASE_DIR/$ZIP_NAME"
             ;;
         f)
             clearbuild "all"
