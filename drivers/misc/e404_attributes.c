@@ -47,6 +47,10 @@ struct e404_attributes e404_data = {
 static int  blocked_cnt;
 static u8   blocked_len[E404_MAX_BLOCKED];
 static char blocked[E404_MAX_BLOCKED][TASK_COMM_LEN];
+u32 proc_version_allowed_uids[MAX_ALLOWED_UIDS_OVERRIDE];
+unsigned int proc_version_allowed_uids_count = 0;
+EXPORT_SYMBOL(proc_version_allowed_uids);
+EXPORT_SYMBOL(proc_version_allowed_uids_count);
 
 static struct kobject *e404_kobj;
 

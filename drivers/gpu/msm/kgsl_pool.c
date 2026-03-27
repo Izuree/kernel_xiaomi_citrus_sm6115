@@ -75,8 +75,12 @@ _kgsl_pool_add_page(struct kgsl_page_pool *pool, struct page *p)
 		return;
 	}
 
+#ifdef CONFIG_E404_ATTRIBUTES
+	if (e404_data.kgsl_skip_zeroing == 0)
+		kgsl_zero_page(p, pool->pool_order);
+#else
 	kgsl_zero_page(p, pool->pool_order);
-
+#endif
 	spin_lock(&pool->list_lock);
 	list_add_tail(&p->lru, &pool->page_list);
 	pool->page_count++;
@@ -298,7 +302,12 @@ int kgsl_pool_alloc_page(int *page_size, struct page **pages,
 			} else
 				return -ENOMEM;
 		}
+#ifdef CONFIG_E404_ATTRIBUTES
+		if (e404_data.kgsl_skip_zeroing == 0)
+			kgsl_zero_page(page, order);
+#else
 		kgsl_zero_page(page, order);
+#endif
 		goto done;
 	}
 
@@ -318,7 +327,12 @@ int kgsl_pool_alloc_page(int *page_size, struct page **pages,
 			page = alloc_pages(gfp_mask, order);
 			if (page == NULL)
 				return -ENOMEM;
+#ifdef CONFIG_E404_ATTRIBUTES
+			if (e404_data.kgsl_skip_zeroing == 0)
+				kgsl_zero_page(page, order);
+#else
 			kgsl_zero_page(page, order);
+#endif
 			goto done;
 		}
 	}
@@ -349,8 +363,13 @@ int kgsl_pool_alloc_page(int *page_size, struct page **pages,
 				return -ENOMEM;
 		}
 
+#ifdef CONFIG_E404_ATTRIBUTES
+		if (e404_data.kgsl_skip_zeroing == 0)
+			kgsl_zero_page(page, order);
+#else
 		kgsl_zero_page(page, order);
-	}
+#endif	
+}
 
 done:
 	for (j = 0; j < (*page_size >> PAGE_SHIFT); j++) {
