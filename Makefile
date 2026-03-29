@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 4
 PATCHLEVEL = 19
-SUBLEVEL = 404R
-EXTRAVERSION =
+SUBLEVEL = 404
+EXTRAVERSION = R
 NAME = "People's Front"
 
 # *DOCUMENTATION*
@@ -1204,16 +1204,21 @@ ARCH_POSTLINK := $(wildcard $(srctree)/arch/$(SRCARCH)/Makefile.postlink)
 cmd_link-vmlinux =                                                 \
 	$(CONFIG_SHELL) $< $(LD) $(KBUILD_LDFLAGS) $(LDFLAGS_vmlinux) ;    \
 	$(if $(ARCH_POSTLINK), $(MAKE) -f $(ARCH_POSTLINK) $@, true)
-
-vmlinux: scripts/link-vmlinux.sh autoksyms_recursive $(vmlinux-deps) FORCE
+vmlinux: scripts/link-vmlinux.sh autoksyms_recursive $(vmlinux-deps) postgen-hook FORCE
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
 endif
 ifdef CONFIG_GDB_SCRIPTS
 	$(Q)ln -fsn $(abspath $(srctree)/scripts/gdb/vmlinux-gdb.py)
 endif
-	+$(call if_changed,link-vmlinux)
+	$(call if_changed,link-vmlinux)
 
+# deutereum: POST-GEN hook
+postgen-hook: $(version_h)
+ifdef CONFIG_DEUTEREUM_POST_GEN_HOOK
+	@echo "  POST-GEN HOOK"
+	$(Q)$(srctree)/scripts/POST-GEN.sh
+endif
 # Build samples along the rest of the kernel. This needs headers_install.
 ifdef CONFIG_SAMPLES
 vmlinux-dirs += samples

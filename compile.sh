@@ -32,9 +32,9 @@ case "$*" in
 esac
 
 case "$*" in
-    *aosp*)
-        export PATH="$BASE_DIR/toolchains/aosp-clang/bin:$PATH"
-        TC="AOSP-Clang"
+    *gf*)
+        export PATH="$BASE_DIR/toolchains/gf-clang/bin:$PATH"
+        TC="bengal-Gf-Clang"
         ;;
     *neutron*)
         export PATH="$BASE_DIR/toolchains/neutron-clang/bin:$PATH"
@@ -53,9 +53,9 @@ case "$*" in
         TC="GCC"
         ;;
     *)
-        if [[ -d "$BASE_DIR/toolchains/aosp-clang" ]]; then
-            export PATH="$BASE_DIR/toolchains/aosp-clang/bin:$PATH"
-            TC="AOSP-Clang"
+        if [[ -d "$BASE_DIR/toolchains/gf-clang" ]]; then
+            export PATH="$BASE_DIR/toolchains/gf-clang/bin:$PATH"
+            TC="bengal-Gf-Clang"
         elif [[ -d "$BASE_DIR/toolchains/neutron-clang" ]]; then
             export PATH="$BASE_DIR/toolchains/neutron-clang/bin:$PATH"
             TC="Neutron-Clang"
@@ -66,18 +66,7 @@ case "$*" in
         ;;
 esac
 
-# Device selection using arrays
     declare -A DEVICE_MAP=(
-        # Hapus atau nonaktifkan perangkat lama jika tidak relevan, 
-        # atau tambahkan yang baru
-        # ["munch"]="MUNCH:vendor/munch_defconfig"
-        # ["alioth"]="ALIOTH:vendor/alioth_defconfig"
-        # ["apollo"]="APOLLO:vendor/apollo_defconfig"
-        # ["pipa"]="PIPA:vendor/pipa_defconfig"
-        # ["lmi"]="LMI:vendor/lmi_defconfig"
-        # ["umi"]="UMI:vendor/umi_defconfig"
-        # ["cmi"]="CMI:vendor/cmi_defconfig"
-        # ["cas"]="CAS:vendor/cas_defconfig"
         ["bengal"]="BENGAL:vendor/bengal-perf_defconfig"
 
     )
@@ -95,18 +84,6 @@ done
 # Set kernel image paths
 K_IMG="$KERNEL_DIR/out/arch/arm64/boot/Image"
 
-# Telegram configuration - Load from external file
-TELEGRAM_CONFIG="$BASE_DIR/kernel_build"
-if [[ -f "$TELEGRAM_CONFIG" ]]; then
-    source "$TELEGRAM_CONFIG"
-    export TOKEN="$TELEGRAM_TOKEN"
-    export CHATID="$TELEGRAM_CHATID"
-else
-    echo "-- Warning: Telegram config file not found at $TELEGRAM_CONFIG --"
-    echo "-- Telegram notifications will be disabled --"
-    export TOKEN=""
-    export CHATID=""
-fi
 
 # Build environment
 export ARCH="arm64"
@@ -129,36 +106,9 @@ build_msg() {
 <code>$COMMIT</code>
 EOF
 )
-    send_msg "$MSG"
 }
 
-success_msg() {
-    local MSG=$(cat <<EOF
-<b>Build Success !</b>
-<code>Date : $(date +"%d %b %Y, %H:%M:%S")</code>
-<code>Time : $(($TIME_END / 60))m $(($TIME_END % 60))s</code>
-EOF
-)
-    send_msg "$MSG"
-}
 
-send_msg() {
-    curl -s -X POST \
-        "https://api.telegram.org/bot$TOKEN/sendMessage" \
-        -d chat_id="$CHATID" \
-        -d text="$1" \
-        -d "parse_mode=html" \
-        -d "disable_web_page_preview=true"
-}
-
-send_file() {
-    curl -s -X POST \
-        "https://api.telegram.org/bot$TOKEN/sendDocument" \
-        -F chat_id="$CHATID" \
-        -F document=@"$1" \
-        -F "parse_mode=html" \
-        -F "disable_web_page_preview=true"
-}
 
 clearbuild() {
     if [[ "$1" == "all" ]]; then
@@ -172,16 +122,11 @@ clearbuild() {
 zipbuild() {
     echo "-- Zipping Kernel --"
     cd "$AK3_DIR" || exit 1
-    ZIP_NAME="E404R-${TYPE}-${TARGET}-$(date "+%y%m%d")-NOSUSFS.zip"
+    ZIP_NAME="RE404-${TARGET}-$(date "+%y%m%d").zip"
     zip -r9 "$BASE_DIR/$ZIP_NAME" META-INF/ tools/ "${TARGET}"*-Image anykernel.sh
     cd "$KERNEL_DIR" || exit 1
 }
 
-uploadbuild() {
-    send_file "$BASE_DIR/compile.log"
-    send_file "$BASE_DIR/$ZIP_NAME"
-    send_msg "<b>Kernel Flashable Zip Uploaded</b>"
-}
 
 setupbuild() {
     if [[ $TC == *Clang* ]]; then
@@ -270,7 +215,7 @@ makebuild() {
     sed -i 's/CONFIG_MODULE_SIG=y/CONFIG_MODULE_SIG=n/g' out/.config
     sed -i 's/CONFIG_MODULE_SIG_ALL=y/# CONFIG_MODULE_SIG_ALL is not set/g' out/.config
     sed -i 's/CONFIG_MODULE_SIG_FORCE=y/# CONFIG_MODULE_SIG_FORCE is not set/g' out/.config
-    
+    echo 0 > out/.version
     echo "-- Compiling Kernel --"
     export CCACHE_DIR="$BASE_DIR/ccache/.ccache_$TC"
 
@@ -319,17 +264,14 @@ while true; do
             clearbuild
             makebuild 2>&1 | tee -a "$BASE_DIR/compile.log"
             zipbuild
-            uploadbuild
             TIME_END=$(("$(date +"%s")" - "$TIME_START"))
-            success_msg
+        
             ;;
         3)
-            echo "-- Sending to Telegram --"
-            send_file "$BASE_DIR/$ZIP_NAME"
+            echo "-- We dont support telegram upload! --"
             ;;
         4)
             zipbuild
-            send_file "$BASE_DIR/$ZIP_NAME"
             ;;
         f)
             clearbuild "all"
