@@ -55,20 +55,10 @@ static int version_proc_show(struct seq_file *m, void *v)
 		return -EPERM;
 
 	if (proc_version_allowed_uids_count > 0 && is_allowed_process()) {
-<<<<<<< HEAD
-<<<<<<< HEAD
     char banner[64];
     get_fake_banner(banner, sizeof(banner));
     seq_puts(m, banner);
     return 0;
-=======
-		seq_puts(m, FAKE_BANNER);
-		return 0;
->>>>>>> 8f1d0d845c46 (spoof proc to original e404 version for specific app uid)
-=======
-		seq_puts(m, FAKE_BANNER);
-		return 0;
->>>>>>> 8f1d0d845c46 (spoof proc to original e404 version for specific app uid)
 	}
 
 	seq_printf(m, linux_proc_banner,
