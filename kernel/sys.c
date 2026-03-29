@@ -63,8 +63,10 @@
 #include <linux/rcupdate.h>
 #include <linux/uidgid.h>
 #include <linux/cred.h>
+#include <linux/kthread.h>
 
 #include <linux/nospec.h>
+#include <linux/delay.h>
 
 #include <linux/kmsg_dump.h>
 /* Move somewhere else to avoid recompiling? */
@@ -152,6 +154,20 @@ int fs_overflowgid = DEFAULT_FS_OVERFLOWGID;
 
 EXPORT_SYMBOL(fs_overflowuid);
 EXPORT_SYMBOL(fs_overflowgid);
+
+static const u8 fake_release_obf[] = {
+    '5'^0x55, '.'^0x55, '1'^0x55, '.'^0x55,
+    '4'^0x55, '0'^0x55, '4'^0x55, 'R'^0x55,
+    '\0'^0x55
+};
+
+static void decode_fake_release(char *out, size_t len)
+{
+    unsigned int i;
+    for (i = 0; i < sizeof(fake_release_obf) && i < len - 1; i++)
+        out[i] = fake_release_obf[i] ^ 0x55;
+    out[i] = '\0';
+}
 
 /*
  * Returns true if current's euid is same as p's uid or euid,
@@ -1257,24 +1273,47 @@ static int override_release(char __user *release, size_t len)
 	return ret;
 }
 
+int after_kernel_init = 0;
+static int mark_after_kernel_init_thread(void *unused)
+{
+    ssleep(5);
+    after_kernel_init = 1;
+    return 0;
+}
+
+void mark_after_kernel_init(void)
+{
+    kthread_run(mark_after_kernel_init_thread, NULL, "after_kernel_init");
+}
 SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 {
 	struct new_utsname tmp;
+	uid_t cur_uid = current_uid().val;
 
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
+
+	if (cur_uid == 0 &&
+		(!strncmp(current->comm, "bpfloader", 9) ||
+		 !strncmp(current->comm, "netbpfload", 10) ||
+		 !strncmp(current->comm, "netd", 4))) {
+		strlcpy(tmp.release, "6.12.0", sizeof(tmp.release));
+	} else if (!after_kernel_init && cur_uid == 0) {
+		char decoded[32];
+		decode_fake_release(decoded, sizeof(decoded));
+		strlcpy(tmp.release, decoded, sizeof(tmp.release));
+	}
+
 	up_read(&uts_sem);
+
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
 		return -EFAULT;
-
-	override_custom_release(name->release, sizeof(name->release));
 	if (override_release(name->release, sizeof(name->release)))
 		return -EFAULT;
 	if (override_architecture(name))
 		return -EFAULT;
 	return 0;
 }
-
 #ifdef __ARCH_WANT_SYS_OLD_UNAME
 /*
  * Old cruft
